@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Lista</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:     #1a0f2e;
+    --ink2:    #3d2b5e;
+    --ink3:    #7a6494;
+    --bg:      #f5f2fa;
+    --bg2:     #ede8f7;
+    --bg3:     #ffffff;
+    --accent:  #4a2080;
+    --accent2: #6b35b8;
+    --gold:    #e8832a;
+    --gold2:   #f5a442;
+    --danger:  #c0392b;
+    --radius:  16px;
+    --shadow:  0 2px 12px rgba(74,32,128,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 20px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  #sync-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--ink3);
+    transition: background 0.3s;
+  }
+  #sync-dot.ok      { background: #2ecc71; }
+  #sync-dot.error   { background: var(--danger); }
+  #sync-dot.syncing { background: var(--gold); animation: pulse 0.8s infinite; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* Botão + flutuante */
+  #fab {
+    position: fixed;
+    bottom: 28px;
+    right: 20px;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: white;
+    border: none;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(232,131,42,0.45);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.2s, background 0.2s;
+    z-index: 100;
+  }
+  #fab:hover { transform: scale(1.08); background: var(--gold2); }
+  #fab.open { transform: rotate(45deg); background: var(--ink3); box-shadow: none; }
+
+  /* ── Painel novo item ── */
+  #new-panel {
+    position: fixed;
+    bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
+    width: 100%; max-width: 480px;
+    background: var(--bg3);
+    border-radius: 24px 24px 0 0;
+    padding: 24px 20px 40px;
+    box-shadow: 0 -8px 40px rgba(74,32,128,0.18);
+    transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+    z-index: 99;
+  }
+  #new-panel.open { transform: translateX(-50%) translateY(0); }
+
+  .panel-handle {
+    width: 36px; height: 4px;
+    border-radius: 2px;
+    background: var(--bg2);
+    margin: 0 auto 20px;
+  }
+
+  .panel-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  #new-name {
+    width: 100%;
+    border: 1.5px solid var(--bg2);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 10px;
+  }
+  #new-name:focus { border-color: var(--accent2); }
+
+  .panel-qty {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .panel-qty label { font-size: 13px; color: var(--ink3); }
+  .qty-ctrl {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 4px 8px;
+  }
+  .qty-btn {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    border: none;
+    background: var(--bg2);
+    color: var(--accent);
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .qty-btn:hover { background: var(--accent2); color: white; }
+  .qty-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ink);
+    min-width: 28px;
+    text-align: center;
+  }
+
+  .panel-actions { display: flex; gap: 10px; }
+
+  .btn-confirm {
+    flex: 1;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-confirm:hover { background: var(--accent2); }
+
+  .btn-cancel-panel {
+    background: var(--bg2);
+    color: var(--ink3);
+    border: none;
+    border-radius: 12px;
+    padding: 13px 18px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+  }
+
+  /* ── Lista ── */
+  #items-list {
+    flex: 1;
+    padding: 8px 16px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--ink3);
+    padding: 60px 20px;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+
+  /* ── Card ── */
+  .item-card {
+    background: var(--bg3);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: box-shadow 0.2s, transform 0.15s;
+    animation: slideIn 0.22s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateY(8px); } }
+  .item-card:active { transform: scale(0.98); }
+  .item-card.conflict { box-shadow: 0 0 0 2px var(--gold); }
+
+  .item-main { flex: 1; min-width: 0; }
+
+  .item-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .item-name.editing { display: none; }
+
+  .item-name-input {
+    display: none;
+    width: 100%;
+    border: none;
+    border-bottom: 1.5px solid var(--accent2);
+    background: transparent;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    outline: none;
+    padding: 2px 0;
+  }
+  .item-name-input.editing { display: block; }
+
+  .item-sub {
+    font-size: 11px;
+    color: var(--ink3);
+    margin-top: 2px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Quantidade inline */
+  .item-qty {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .iq-btn {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    border: none;
+    background: var(--bg2);
+    color: var(--accent);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  .iq-btn:hover { background: var(--accent); color: white; }
+  .iq-btn:active { transform: scale(0.9); }
+  .iq-btn.minus:hover { background: var(--ink3); }
+
+  .iq-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    min-width: 24px;
+    text-align: center;
+  }
+
+  /* Ações do card */
+  .item-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .act-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+    color: var(--ink3);
+    font-size: 15px;
+  }
+  .act-btn:hover { background: var(--bg2); color: var(--accent); }
+  .act-btn.delete:hover { background: #fde8e8; color: var(--danger); }
+  .act-btn.save { color: var(--accent); font-size: 13px; font-weight: 600; }
+
+  /* Overlay quando painel aberto */
+  #overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(26,15,46,0.35);
+    z-index: 98;
+    backdrop-filter: blur(2px);
+  }
+  #overlay.open { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="header-title">Lista</span>
+  <div class="header-actions">
+    <div id="sync-dot" title="Status"></div>
+  </div>
+</header>
+
+<div id="items-list">
+  <div class="empty-state">
+    <div class="empty-icon">📦</div>
+    Nenhum item ainda.<br>Toca o <strong>+</strong> para adicionar.
+  </div>
+</div>
+
+<div id="overlay" onclick="closePanel()"></div>
+
+<div id="new-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-title">Novo item</div>
+  <input id="new-name" type="text" placeholder="Nome do item..." autocomplete="off"/>
+  <div class="panel-qty">
+    <label>Quantidade</label>
+    <div class="qty-ctrl">
+      <button class="qty-btn" onclick="changeNewQty(-1)">−</button>
+      <span class="qty-val" id="new-qty-val">1</span>
+      <button class="qty-btn" onclick="changeNewQty(1)">+</button>
+    </div>
+  </div>
+  <div class="panel-actions">
+    <button class="btn-cancel-panel" onclick="closePanel()">Cancelar</button>
+    <button class="btn-confirm" onclick="addItem()">Adicionar</button>
+  </div>
+</div>
+
+<button id="fab" onclick="togglePanel()">+</button>
+
+<script>
+let localItems = {};
+let serverUrl  = '';
+let newQty     = 1;
+
+// ── Status ────────────────────────────────────────────────────────────────────
+function setStatus(s) {
+  document.getElementById('sync-dot').className = s;
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+function clientTimestamp() { return Date.now() / 1000; }
+
+async function apiFetch(path, options = {}) {
+  setStatus('syncing');
+  try {
+    const res = await fetch(serverUrl + path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    });
+    const data = await res.json();
+    setStatus('ok');
+    return { ok: res.ok, data };
+  } catch (err) {
+    setStatus('error');
+    throw err;
+  }
+}
+
+// ── Pull ──────────────────────────────────────────────────────────────────────
+async function pullAll() {
+  if (!serverUrl) return;
+  try {
+    const { data } = await apiFetch('/items');
+    localItems = {};
+    data.forEach(item => { localItems[item.id] = item; });
+    render();
+  } catch (_) {}
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  const list = document.getElementById('items-list');
+  const ids  = Object.keys(localItems);
+
+  if (ids.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📦</div>Nenhum item ainda.<br>Toca o <strong>+</strong> para adicionar.</div>`;
+    return;
+  }
+
+  list.innerHTML = ids
+    .sort((a, b) => localItems[a].created_at - localItems[b].created_at)
+    .map(id => {
+      const item = localItems[id];
+      const name = item.payload?.text || '';
+      const qty  = item.payload?.qty  ?? 1;
+      const ts   = new Date(item.updated_at * 1000).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+      return `
+        <div class="item-card" id="card-${id}">
+          <div class="item-main">
+            <div class="item-name" id="name-${id}">${esc(name)}</div>
+            <input class="item-name-input" id="input-${id}" value="${esc(name)}" onkeydown="onEditKey(event,${id})"/>
+            <div class="item-sub">#${id} · ${ts}</div>
+          </div>
+          <div class="item-qty">
+            <button class="iq-btn minus" onclick="adjustQty(${id},-1)">−</button>
+            <span class="iq-val" id="qty-${id}">${qty}</span>
+            <button class="iq-btn" onclick="adjustQty(${id},1)">+</button>
+          </div>
+          <div class="item-actions">
+            <button class="act-btn" id="edit-btn-${id}" onclick="startEdit(${id})" title="Editar">✏️</button>
+            <button class="act-btn save" id="save-btn-${id}" onclick="saveEdit(${id})" style="display:none" title="Salvar">✓</button>
+            <button class="act-btn delete" onclick="deleteItem(${id})" title="Excluir">🗑</button>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Adicionar ─────────────────────────────────────────────────────────────────
+async function addItem() {
+  const name = document.getElementById('new-name').value.trim();
+  if (!name) { document.getElementById('new-name').focus(); return; }
+
+  closePanel();
+  try {
+    const { data } = await apiFetch('/items', {
+      method: 'POST',
+      body: JSON.stringify({ payload: { text: name, qty: newQty }, client_timestamp: clientTimestamp() }),
+    });
+    localItems[data.id] = data;
+    document.getElementById('new-name').value = '';
+    newQty = 1;
+    document.getElementById('new-qty-val').textContent = '1';
+    render();
+  } catch (_) {}
+}
+
+// ── Quantidade ────────────────────────────────────────────────────────────────
+function changeNewQty(delta) {
+  newQty = Math.max(0, newQty + delta);
+  document.getElementById('new-qty-val').textContent = newQty;
+}
+
+async function adjustQty(id, delta) {
+  const item   = localItems[id];
+  const newVal = Math.max(0, (item.payload?.qty ?? 1) + delta);
+
+  // Atualiza localmente já pra feedback imediato
+  localItems[id] = { ...item, payload: { ...item.payload, qty: newVal } };
+  document.getElementById(`qty-${id}`).textContent = newVal;
+
+  try {
+    const { data } = await apiFetch(`/items/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ payload: { ...item.payload, qty: newVal }, client_timestamp: clientTimestamp() }),
+    });
+    if (data.conflict) {
+      localItems[id] = data.current;
+      render();
+    } else {
+      localItems[id] = data;
+    }
+  } catch (_) {}
+}
+
+// ── Editar nome ───────────────────────────────────────────────────────────────
+function startEdit(id) {
+  document.getElementById(`name-${id}`).classList.add('editing');
+  document.getElementById(`input-${id}`).classList.add('editing');
+  document.getElementById(`edit-btn-${id}`).style.display = 'none';
+  document.getElementById(`save-btn-${id}`).style.display = 'flex';
+  document.getElementById(`input-${id}`).focus();
+}
+
+function onEditKey(e, id) {
+  if (e.key === 'Enter') saveEdit(id);
+  if (e.key === 'Escape') cancelEdit(id);
+}
+
+function cancelEdit(id) {
+  const item = localItems[id];
+  document.getElementById(`input-${id}`).value = item.payload?.text || '';
+  document.getElementById(`name-${id}`).classList.remove('editing');
+  document.getElementById(`input-${id}`).classList.remove('editing');
+  document.getElementById(`edit-btn-${id}`).style.display = 'flex';
+  document.getElementById(`save-btn-${id}`).style.display = 'none';
+}
+
+async function saveEdit(id) {
+  const text = document.getElementById(`input-${id}`).value.trim();
+  const item = localItems[id];
+  cancelEdit(id);
+
+  try {
+    const { data } = await apiFetch(`/items/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ payload: { ...item.payload, text }, client_timestamp: clientTimestamp() }),
+    });
+    if (data.conflict) {
+      localItems[id] = data.current;
+    } else {
+      localItems[id] = data;
+    }
+    render();
+  } catch (_) {}
+}
+
+// ── Deletar ───────────────────────────────────────────────────────────────────
+async function deleteItem(id) {
+  const card = document.getElementById(`card-${id}`);
+  card.style.opacity = '0.4';
+  try {
+    const { data } = await apiFetch(`/items/${id}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ client_timestamp: clientTimestamp() }),
+    });
+    if (data.conflict) {
+      localItems[id] = data.current;
+      render();
+    } else {
+      delete localItems[id];
+      render();
+    }
+  } catch (_) { card.style.opacity = '1'; }
+}
+
+// ── Painel ────────────────────────────────────────────────────────────────────
+function togglePanel() {
+  const open = document.getElementById('new-panel').classList.toggle('open');
+  document.getElementById('fab').classList.toggle('open', open);
+  document.getElementById('overlay').classList.toggle('open', open);
+  if (open) setTimeout(() => document.getElementById('new-name').focus(), 300);
+}
+
+function closePanel() {
+  document.getElementById('new-panel').classList.remove('open');
+  document.getElementById('fab').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+let ws = null;
+
+function connectWS() {
+  const wsUrl = serverUrl.replace('http://', 'ws://');
+  ws = new WebSocket(wsUrl + '/ws');
+
+  ws.onmessage = (e) => {
+    const { event, data } = JSON.parse(e.data);
+    if (event === 'created' || event === 'updated') {
+      localItems[data.id] = data;
+      render();
+    } else if (event === 'deleted') {
+      delete localItems[data.id];
+      render();
+    }
+  };
+
+  ws.onopen  = () => setStatus('ok');
+  ws.onclose = () => { setStatus('error'); setTimeout(connectWS, 3000); };
+  ws.onerror = () => ws.close();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function connect() {
+  serverUrl = location.protocol !== 'file:' ? location.origin : '';
+  pullAll();
+  connectWS();
+}
+
+connect();
+</script>
+</body>
+</html>

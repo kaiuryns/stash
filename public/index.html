@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Lista</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="/css/app.css" rel="stylesheet">
+</head>
+<body>
+
+<header>
+  <span class="header-title">Lista</span>
+  <div class="header-actions">
+    <div id="sync-dot" title="Status"></div>
+  </div>
+</header>
+
+<div id="items-list">
+  <div class="empty-state">
+    <div class="empty-icon">📦</div>
+    Nenhum item ainda.<br>Toca o <strong>+</strong> para adicionar.
+  </div>
+</div>
+
+<div id="overlay" onclick="closePanel()"></div>
+
+<div id="new-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-title">Novo item</div>
+  <input id="new-name" type="text" placeholder="Nome do item..." autocomplete="off"/>
+  <div class="panel-qty">
+    <label>Quantidade</label>
+    <div class="qty-ctrl">
+      <button class="qty-btn" onclick="changeNewQty(-1)">−</button>
+      <span class="qty-val" id="new-qty-val">1</span>
+      <button class="qty-btn" onclick="changeNewQty(1)">+</button>
+    </div>
+  </div>
+  <div class="panel-actions">
+    <button class="btn-cancel-panel" onclick="closePanel()">Cancelar</button>
+    <button class="btn-confirm" onclick="addItem()">Adicionar</button>
+  </div>
+</div>
+
+<button id="fab" onclick="togglePanel()">+</button>
+
+<script src="/js/api.js"></script>
+<script src="/js/render.js"></script>
+<script src="/js/panel.js"></script>
+<script src="/js/items.js"></script>
+<script src="/js/websocket.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

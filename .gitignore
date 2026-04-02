@@ -1,0 +1,4 @@
+vendor/
+dados.db
+.bundle
+.ruby-lsp
